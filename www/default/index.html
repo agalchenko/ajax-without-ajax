@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Ajax w/o Ajax</title>
+
+        <style>
+            .hidden
+            {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Ajax without Ajax</h1>
+
+        <form action="#" method="post" id="user-form">
+            <table>
+                <tbody>
+                <tr>
+                    <td><label for="username">Enter your username:</label></td>
+                    <td><input type="text" required name="username" id="username" value="artem"></td>
+                </tr>
+                <tr>
+                    <td><label for="name">Enter your name:</label></td>
+                    <td><input type="text" required name="name" id="name" value="Artem"></td>
+                </tr>
+                <tr>
+                    <td><label for="age">Enter your age:</label></td>
+                    <td><input type="text" required name="age" id="age" value="26"></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        <input type="button" value="Send 1" id="submit-way1">
+                        <input type="button" value="Send 2" id="submit-way2">
+                        <input type="button" value="Send 3" id="submit-way3" disabled>
+                        <input type="button" value="Send 4" id="submit-way4" disabled>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </form>
+
+        <ul>
+            <li>
+                <div id="result-container1">
+                    <h3>Result for way 1 (Iframe + Form):</h3>
+                    <p></p>
+                    <iframe width="1200" height="50" frameBorder="0" class="hidden"></iframe>
+                </div>
+            </li>
+            <li>
+                <div id="result-container2">
+                    <h3>Result for way 2 (Server-Side-Events):</h3>
+                    <p></p>
+                </div>
+            </li>
+            <li>
+                <div id="result-container3">
+                    <h3>Result for way 3 (WebSocket):</h3>
+                    <p>
+                        Could be created connection between client and server via WebSocket.
+                        But, unfortunately, could not be configured.
+                    </p>
+                </div>
+            </li>
+            <li>
+                <div id="result-container4">
+                    <h3>Result for way 4 (unknown crutch):</h3>
+                    <p>
+                        No ideas. Perhaps, could be used Web Components, namely Shadow DOM.
+                    </p>
+                </div>
+            </li>
+        </ul>
+        <script>
+            (() => {
+                const submitBtn1 = document.getElementById('submit-way1');
+                const submitBtn2 = document.getElementById('submit-way2');
+                const submitBtn3 = document.getElementById('submit-way3');
+                const submitBtn4 = document.getElementById('submit-way4');
+
+                const result1 = document.getElementById('result-container1');
+                const result2 = document.getElementById('result-container2');
+                const result3 = document.getElementById('result-container3');
+                const result4 = document.getElementById('result-container4');
+
+                const form = document.getElementById('user-form');
+
+                submitBtn1.addEventListener('click', (e) => {
+                    e.preventDefault();
+
+                    const url = '/app.php?way=1';
+                    const name = 'way1-iframe';
+                    const iframe = document.getElementsByTagName('iframe')[0];
+
+                    iframe.setAttribute('src', url);
+                    iframe.setAttribute('name', name);
+
+                    form.setAttribute('action', url);
+                    form.setAttribute('target', name);
+
+                    result1.appendChild(iframe);
+                    form.submit();
+
+                    iframe.classList.remove('hidden');
+
+                    result1.style.display = 'block';
+                });
+
+                submitBtn2.addEventListener('click', () => {
+                    if(typeof(EventSource) === "undefined") {
+                        alert('Sorry! No server-sent events support..');
+
+                        return;
+                    }
+
+                    const formData = {
+                        username: document.getElementById('username').value,
+                        name: document.getElementById('name').value,
+                        age: document.getElementById('age').value,
+                    };
+
+                    const url = '/app.php?way=2';
+                    const eventSource = new EventSource(`${url}&postData=${JSON.stringify(formData)}`);
+                    const p = result2.getElementsByTagName('p')[0];
+
+                    eventSource.onerror = (e) => {
+                        if (e.eventPhase === EventSource.CLOSED) {
+                            eventSource.close();
+                        }
+                    };
+
+                    eventSource.onmessage = (e) => {
+                        p.innerHTML = e.data;
+                    };
+
+                    result2.style.display = 'block';
+                });
+
+                submitBtn3.addEventListener('click', () => {
+                    // TODO: the following block should work via websocket.
+                    // const socket = new WebSocket('ws://0.0.0.0:12345/ws.php');
+                    // const p = result3.getElementsByTagName('p')[0];
+                    //
+                    // socket.onmessage = function(e) {
+                    //     p.innerHTML = e.data;
+                    // };
+
+                    result3.style.display = 'block';
+                });
+
+                submitBtn4.addEventListener('click', () => {
+                    result4.style.display = 'block';
+                });
+            })();
+        </script>
+    </body>
+</html>
